@@ -420,17 +420,18 @@ class PodGenerator:
         )
 
     @staticmethod
-    def construct_pod(
+    def construct_pod(  # pylint: disable=too-many-arguments
         dag_id: str,
         task_id: str,
         pod_id: str,
         try_number: int,
         date: str,
-        command: List[str],
+        command: Optional[List[str]],
         kube_executor_config: Optional[k8s.V1Pod],
         worker_config: k8s.V1Pod,
         namespace: str,
-        worker_uuid: str
+        worker_uuid: str,
+        use_args: Optional[bool] = False,
     ) -> k8s.V1Pod:
         """
         Construct a pod by gathering and consolidating the configuration from 3 places:
@@ -438,6 +439,13 @@ class PodGenerator:
             - executor_config
             - dynamic arguments
         """
+
+        if use_args:
+            args = command
+            command = []
+        else:
+            args = []
+
         dynamic_pod = PodGenerator(
             namespace=namespace,
             labels={
@@ -450,6 +458,7 @@ class PodGenerator:
                 'kubernetes_executor': 'True',
             },
             cmds=command,
+            args=args,
             name=pod_id
         ).gen_pod()
 
